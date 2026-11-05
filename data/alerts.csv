@@ -1,0 +1,7 @@
+ALT-OV-6808,OVERDUE,1,Overdue Loan: PB-107,Borrower Diya Patel (ID: STU-1002) is overdue by 2h. Penalty fee: $4.00,OVERDUE_REC-5002,2026-11-04 00:22:06,false
+ALT-BL-6809,LOW_BATTERY,2,Low Battery Warning: PB-104,PowerBank PB-104 (Baseus Blade 100W Slim) battery is at 18%. Minimum 20% required for lending.,BATT_LOW_PB-104,2026-11-04 00:22:06,false
+ALT-BC-6809,CRITICAL_BATTERY,1,CRITICAL BATTERY: PB-105,PowerBank PB-105 (Samsung Super Fast 25W) battery is at 8%! Immediate recharge needed at DOCK-A05.,BATT_CRIT_PB-105,2026-11-04 00:22:06,false
+ALT-BL-6809,LOW_BATTERY,2,Low Battery Warning: PB-110,PowerBank PB-110 (Xiaomi Pocket Power 10K) battery is at 15%. Minimum 20% required for lending.,BATT_LOW_PB-110,2026-11-04 00:22:06,false
+ALT-BC-6809,CRITICAL_BATTERY,1,CRITICAL BATTERY: PB-111,PowerBank PB-111 (OnePlus 50W Warp Bank) battery is at 0%! Immediate recharge needed at SERVICE-BAY.,BATT_CRIT_PB-111,2026-11-04 00:22:06,false
+ALT-OV-5815,OVERDUE,1,Overdue Loan: PB-106,Borrower Aarav Sharma (ID: STU-1001) is overdue by 4h 37m. Penalty fee: $9.23,OVERDUE_REC-5001,2026-11-04 07:59:25,false
+ALT-OV-5815,OVERDUE,1,Overdue Loan: PB-107,Borrower Diya Patel (ID: STU-1002) is overdue by 3h 37m. Penalty fee: $7.23,OVERDUE_REC-4819,2026-11-04 07:59:25,false

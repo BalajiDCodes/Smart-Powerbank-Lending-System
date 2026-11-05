@@ -1,0 +1,6 @@
+.DS_Store
+Macintosh HD
+bin/
+*.class
+.vscode/
+.idea/

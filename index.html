@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart Powerbank Lending System | DSA Cloud Edition</title>
+  <!-- Tailwind CSS CDN with dark mode support -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0fdf4',
+              100: '#dcfce7',
+              500: '#22c55e',
+              600: '#16a34a',
+              700: '#15803d',
+              900: '#14532d',
+            },
+            accent: {
+              cyan: '#06b6d4',
+              violet: '#8b5cf6',
+              amber: '#f59e0b',
+              rose: '#f43f5e'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 3px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-emerald-500 selection:text-black">
+
+  <!-- Top Navigation Bar -->
+  <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur-md sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-cyan-500 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+          <i class="fa-solid fa-bolt text-slate-950 font-bold text-lg"></i>
+        </div>
+        <div>
+          <div class="flex items-center space-x-2">
+            <h1 class="text-base font-bold tracking-tight text-white">Smart PowerBank</h1>
+            <span class="px-2 py-0.5 text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 rounded-full">DSA SUITE v2.0</span>
+          </div>
+          <p class="text-xs text-slate-400 hidden sm:block">Campus PowerBank Fleet & Automated Lending System</p>
+        </div>
+      </div>
+
+      <!-- Quick Metrics & DSA Indicators -->
+      <div class="flex items-center space-x-3">
+        <div id="liveClock" class="font-mono text-xs text-slate-400 hidden md:flex items-center space-x-2 bg-slate-800/60 px-3 py-1.5 rounded-lg border border-slate-700/50">
+          <i class="fa-regular fa-clock text-emerald-400"></i>
+          <span id="currentTime">--:--:--</span>
+        </div>
+
+        <a href="https://github.com/BalajiDCodes/Smart-Powerbank-Lending-System" target="_blank" class="flex items-center space-x-2 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg border border-slate-700 text-xs transition">
+          <i class="fa-brands fa-github text-sm"></i>
+          <span class="hidden sm:inline">BalajiDCodes</span>
+        </a>
+
+        <button onclick="resetToDefaults()" title="Reset to initial sample dataset" class="px-3 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 rounded-lg text-xs font-medium transition flex items-center space-x-1.5">
+          <i class="fa-solid fa-rotate-left"></i>
+          <span class="hidden md:inline">Reset Data</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Tab Bar -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-1 overflow-x-auto custom-scrollbar border-t border-slate-800/80 pt-1">
+      <button onclick="switchTab('fleet')" class="tab-btn active px-4 py-2.5 text-xs font-semibold rounded-t-lg transition flex items-center space-x-2 border-b-2 border-emerald-500 text-emerald-400 bg-slate-800/50" data-tab="fleet">
+        <i class="fa-solid fa-layer-group"></i>
+        <span>Fleet Inventory <span class="opacity-60 font-mono">(ArrayList & Map)</span></span>
+      </button>
+      <button onclick="switchTab('terminal')" class="tab-btn px-4 py-2.5 text-xs font-semibold rounded-t-lg transition flex items-center space-x-2 border-b-2 border-transparent text-slate-400 hover:text-slate-200" data-tab="terminal">
+        <i class="fa-solid fa-arrow-right-arrow-left"></i>
+        <span>Borrow & Return</span>
+      </button>
+      <button onclick="switchTab('queue')" class="tab-btn px-4 py-2.5 text-xs font-semibold rounded-t-lg transition flex items-center space-x-2 border-b-2 border-transparent text-slate-400 hover:text-slate-200" data-tab="queue">
+        <i class="fa-solid fa-people-line"></i>
+        <span>Waitlist Queue <span id="queueBadge" class="px-1.5 py-0.2 rounded-full text-[10px] bg-cyan-500/20 text-cyan-400 border border-cyan-500/40">0</span></span>
+      </button>
+      <button onclick="switchTab('students')" class="tab-btn px-4 py-2.5 text-xs font-semibold rounded-t-lg transition flex items-center space-x-2 border-b-2 border-transparent text-slate-400 hover:text-slate-200" data-tab="students">
+        <i class="fa-solid fa-graduation-cap"></i>
+        <span>Students <span class="opacity-60 font-mono">(HashMap)</span></span>
+      </button>
+      <button onclick="switchTab('alerts')" class="tab-btn px-4 py-2.5 text-xs font-semibold rounded-t-lg transition flex items-center space-x-2 border-b-2 border-transparent text-slate-400 hover:text-slate-200" data-tab="alerts">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <span>Alert Center <span id="alertBadge" class="px-1.5 py-0.2 rounded-full text-[10px] bg-rose-500/20 text-rose-400 border border-rose-500/40">0</span></span>
+      </button>
+      <button onclick="switchTab('history')" class="tab-btn px-4 py-2.5 text-xs font-semibold rounded-t-lg transition flex items-center space-x-2 border-b-2 border-transparent text-slate-400 hover:text-slate-200" data-tab="history">
+        <i class="fa-solid fa-clock-rotate-left"></i>
+        <span>Audit Log <span class="opacity-60 font-mono">(LinkedList)</span></span>
+      </button>
+      <button onclick="switchTab('dsa')" class="tab-btn px-4 py-2.5 text-xs font-semibold rounded-t-lg transition flex items-center space-x-2 border-b-2 border-transparent text-purple-400 hover:text-purple-300" data-tab="dsa">
+        <i class="fa-solid fa-network-wired"></i>
+        <span>DSA Inspector</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full">
+
+    <!-- KPI Metric Cards -->
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 shadow-sm hover:border-slate-700 transition">
+        <div class="text-[11px] font-medium text-slate-400 uppercase tracking-wider flex items-center justify-between">
+          <span>Fleet Total</span>
+          <i class="fa-solid fa-battery-full text-slate-500"></i>
+        </div>
+        <div id="statTotal" class="text-2xl font-bold text-white mt-1 font-mono">0</div>
+        <div class="text-[11px] text-slate-500 mt-0.5">ArrayList storage</div>
+      </div>
+
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 shadow-sm hover:border-emerald-500/50 transition">
+        <div class="text-[11px] font-medium text-emerald-400 uppercase tracking-wider flex items-center justify-between">
+          <span>Available</span>
+          <i class="fa-solid fa-circle-check text-emerald-400"></i>
+        </div>
+        <div id="statAvailable" class="text-2xl font-bold text-emerald-400 mt-1 font-mono">0</div>
+        <div class="text-[11px] text-slate-500 mt-0.5">Ready (&gt;= 20% batt)</div>
+      </div>
+
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 shadow-sm hover:border-blue-500/50 transition">
+        <div class="text-[11px] font-medium text-blue-400 uppercase tracking-wider flex items-center justify-between">
+          <span>Active Loans</span>
+          <i class="fa-solid fa-handshake text-blue-400"></i>
+        </div>
+        <div id="statBorrowed" class="text-2xl font-bold text-blue-400 mt-1 font-mono">0</div>
+        <div class="text-[11px] text-slate-500 mt-0.5">Currently with students</div>
+      </div>
+
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 shadow-sm hover:border-rose-500/50 transition">
+        <div class="text-[11px] font-medium text-rose-400 uppercase tracking-wider flex items-center justify-between">
+          <span>Overdue Loans</span>
+          <i class="fa-solid fa-hourglass-end text-rose-400"></i>
+        </div>
+        <div id="statOverdue" class="text-2xl font-bold text-rose-400 mt-1 font-mono">0</div>
+        <div class="text-[11px] text-slate-500 mt-0.5">$2.00 / hr penalty</div>
+      </div>
+
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 shadow-sm hover:border-amber-500/50 transition">
+        <div class="text-[11px] font-medium text-amber-400 uppercase tracking-wider flex items-center justify-between">
+          <span>Alert Queue</span>
+          <i class="fa-solid fa-fire text-amber-400"></i>
+        </div>
+        <div id="statAlerts" class="text-2xl font-bold text-amber-400 mt-1 font-mono">0</div>
+        <div class="text-[11px] text-slate-500 mt-0.5">PriorityQueue (Heap)</div>
+      </div>
+
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 shadow-sm hover:border-cyan-500/50 transition">
+        <div class="text-[11px] font-medium text-cyan-400 uppercase tracking-wider flex items-center justify-between">
+          <span>Waitlist</span>
+          <i class="fa-solid fa-users text-cyan-400"></i>
+        </div>
+        <div id="statQueue" class="text-2xl font-bold text-cyan-400 mt-1 font-mono">0</div>
+        <div class="text-[11px] text-slate-500 mt-0.5">FIFO Waiting Queue</div>
+      </div>
+    </div>
+
+    <!-- TAB 1: FLEET INVENTORY -->
+    <section id="tab-fleet" class="tab-content space-y-4">
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5">
+        <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+          <div>
+            <h2 class="text-lg font-bold text-white flex items-center space-x-2">
+              <span>Fleet Inventory Management</span>
+              <span class="text-xs font-mono font-normal text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">ArrayList + HashMap O(1)</span>
+            </h2>
+            <p class="text-xs text-slate-400 mt-0.5">Real-time status of all hardware powerbanks, battery percentages, and docking stations.</p>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2 w-full md:w-auto">
+            <button onclick="openAddPowerBankModal()" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-semibold rounded-lg text-xs transition flex items-center space-x-1.5 shadow-md shadow-emerald-600/20">
+              <i class="fa-solid fa-plus font-bold"></i>
+              <span>Register PowerBank</span>
+            </button>
+            <button onclick="runVerificationTest()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium border border-slate-700 transition flex items-center space-x-1.5">
+              <i class="fa-solid fa-vial-circle-check text-cyan-400"></i>
+              <span>Run System Test Suite</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Filter & Search Controls -->
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-4">
+          <div class="relative flex-1 max-w-md">
+            <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-xs text-slate-400"></i>
+            <input type="text" id="inventorySearch" placeholder="Search by ID, Model, Slot..." oninput="renderFleet()" class="w-full pl-9 pr-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition" />
+          </div>
+
+          <div class="flex items-center space-x-1 overflow-x-auto custom-scrollbar pb-1 sm:pb-0">
+            <button onclick="setFleetFilter('ALL')" class="fleet-filter-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-500/20 text-emerald-300 border border-emerald-500/40" data-filter="ALL">All</button>
+            <button onclick="setFleetFilter('AVAILABLE')" class="fleet-filter-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800 text-slate-400 hover:text-white border border-slate-700" data-filter="AVAILABLE">Available</button>
+            <button onclick="setFleetFilter('BORROWED')" class="fleet-filter-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800 text-slate-400 hover:text-white border border-slate-700" data-filter="BORROWED">Borrowed</button>
+            <button onclick="setFleetFilter('LOW_BATTERY')" class="fleet-filter-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800 text-slate-400 hover:text-white border border-slate-700" data-filter="LOW_BATTERY">Low Battery (&lt;20%)</button>
+            <button onclick="setFleetFilter('CHARGING')" class="fleet-filter-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800 text-slate-400 hover:text-white border border-slate-700" data-filter="CHARGING">Charging</button>
+            <button onclick="setFleetFilter('MAINTENANCE')" class="fleet-filter-btn px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800 text-slate-400 hover:text-white border border-slate-700" data-filter="MAINTENANCE">Maintenance</button>
+          </div>
+        </div>
+
+        <!-- Inventory Grid -->
+        <div id="fleetGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-5">
+          <!-- Rendered dynamically -->
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: BORROW & RETURN TERMINAL -->
+    <section id="tab-terminal" class="tab-content hidden space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+        <!-- Issue PowerBank Form -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-sm">
+          <div class="flex items-center space-x-2.5 pb-4 border-b border-slate-800">
+            <div class="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-bold">
+              <i class="fa-solid fa-arrow-up-from-bracket"></i>
+            </div>
+            <div>
+              <h3 class="text-sm font-bold text-white">Issue PowerBank to Student</h3>
+              <p class="text-[11px] text-slate-400">Validate limits (max 2), assign unit, and start loan timer</p>
+            </div>
+          </div>
+
+          <form onsubmit="handleIssueSubmit(event)" class="space-y-4 mt-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Select Student</label>
+              <select id="issueStudentSelect" required class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-emerald-500 transition">
+                <!-- Dynamically populated -->
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Select Available PowerBank (Battery &gt;= 20%)</label>
+              <select id="issuePowerBankSelect" required class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-emerald-500 transition">
+                <!-- Dynamically populated -->
+              </select>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-semibold text-slate-300 mb-1">Loan Duration (Hours)</label>
+                <input type="number" id="issueDuration" min="1" max="24" value="4" required class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-emerald-500 transition" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-300 mb-1">Overdue Penalty Policy</label>
+                <div class="px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-rose-400 font-mono">
+                  $2.00 / hr overdue
+                </div>
+              </div>
+            </div>
+
+            <button type="submit" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold rounded-lg text-xs transition shadow-lg shadow-emerald-600/20 flex items-center justify-center space-x-2">
+              <i class="fa-solid fa-check"></i>
+              <span>Confirm & Issue PowerBank</span>
+            </button>
+          </form>
+        </div>
+
+        <!-- Return PowerBank Form -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-sm">
+          <div class="flex items-center space-x-2.5 pb-4 border-b border-slate-800">
+            <div class="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-blue-400 font-bold">
+              <i class="fa-solid fa-arrow-down-to-bracket"></i>
+            </div>
+            <div>
+              <h3 class="text-sm font-bold text-white">Return PowerBank Dock</h3>
+              <p class="text-[11px] text-slate-400">Process return, calculate overdue penalty, and dock unit</p>
+            </div>
+          </div>
+
+          <form onsubmit="handleReturnSubmit(event)" class="space-y-4 mt-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-300 mb-1">Select Active Loan</label>
+              <select id="returnBorrowSelect" required onchange="handleReturnSelectChange()" class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500 transition">
+                <!-- Dynamically populated -->
+              </select>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-semibold text-slate-300 mb-1">Return Battery Level (%)</label>
+                <input type="number" id="returnBattery" min="0" max="100" value="65" required class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-blue-500 transition" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-300 mb-1">Auto Overdue Penalty</label>
+                <div id="returnFinePreview" class="px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-300 font-mono">
+                  $0.00
+                </div>
+              </div>
+            </div>
+
+            <div id="returnStatusDetails" class="p-3 bg-slate-950/70 border border-slate-800 rounded-lg text-xs text-slate-400 space-y-1">
+              Select an active loan above to view borrow timestamp, deadline, and fine details.
+            </div>
+
+            <button type="submit" class="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg text-xs transition shadow-lg shadow-blue-600/20 flex items-center justify-center space-x-2">
+              <i class="fa-solid fa-box-archive"></i>
+              <span>Process Return & Update Inventory</span>
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Active Borrows Table -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-sm">
+        <div class="flex items-center justify-between pb-4 border-b border-slate-800">
+          <div>
+            <h3 class="text-sm font-bold text-white flex items-center space-x-2">
+              <span>Active PowerBank Loans</span>
+              <span id="activeBorrowsCount" class="text-xs font-mono font-normal text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20">0 active</span>
+            </h3>
+            <p class="text-[11px] text-slate-400 mt-0.5">Live tracking of checked-out hardware and real-time overdue detection.</p>
+          </div>
+          <button onclick="refreshActiveLoans()" class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded text-xs transition flex items-center space-x-1">
+            <i class="fa-solid fa-arrows-rotate"></i>
+            <span>Refresh</span>
+          </button>
+        </div>
+
+        <div class="overflow-x-auto custom-scrollbar mt-4">
+          <table class="w-full text-left text-xs">
+            <thead>
+              <tr class="border-b border-slate-800 text-slate-400 uppercase font-mono text-[10px]">
+                <th class="py-2.5 px-3">Record ID</th>
+                <th class="py-2.5 px-3">Student</th>
+                <th class="py-2.5 px-3">PowerBank</th>
+                <th class="py-2.5 px-3">Borrowed At</th>
+                <th class="py-2.5 px-3">Due Deadline</th>
+                <th class="py-2.5 px-3">Status</th>
+                <th class="py-2.5 px-3">Penalty Fine</th>
+                <th class="py-2.5 px-3 text-right">Quick Return</th>
+              </tr>
+            </thead>
+            <tbody id="activeBorrowsTableBody" class="divide-y divide-slate-800/60 text-slate-300">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: FIFO WAITLIST QUEUE -->
+    <section id="tab-queue" class="tab-content hidden space-y-6">
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-sm">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+          <div>
+            <h2 class="text-lg font-bold text-white flex items-center space-x-2">
+              <span>FIFO Waitlist Queue Manager</span>
+              <span class="text-xs font-mono font-normal text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/20">Queue&lt;BorrowRequest&gt; (FIFO)</span>
+            </h2>
+            <p class="text-xs text-slate-400 mt-0.5">Students wait in strict First-In, First-Out sequence when powerbanks are exhausted or unavailable.</p>
+          </div>
+
+          <div class="flex items-center space-x-2">
+            <button onclick="fulfillNextQueueRequest()" class="px-3.5 py-2 bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-bold rounded-lg text-xs transition flex items-center space-x-1.5 shadow-md shadow-cyan-600/20">
+              <i class="fa-solid fa-play"></i>
+              <span>Fulfill Head of Queue (Dequeue)</span>
+            </button>
+            <button onclick="openEnqueueModal()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium border border-slate-700 transition flex items-center space-x-1.5">
+              <i class="fa-solid fa-user-plus text-emerald-400"></i>
+              <span>Enqueue Student</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Visual Queue Pipeline -->
+        <div class="mt-5">
+          <div class="text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2 flex items-center justify-between">
+            <span>Visual Queue Pipeline: Head (Next Out) &rarr; Tail (Most Recent)</span>
+            <span id="queueVisualCount" class="font-mono text-cyan-400">0 in queue</span>
+          </div>
+          <div id="queuePipelineContainer" class="flex items-center space-x-3 overflow-x-auto p-4 bg-slate-950 border border-slate-800/80 rounded-xl min-h-[110px] custom-scrollbar">
+            <!-- Dynamically populated cards with arrows -->
+          </div>
+        </div>
+
+        <!-- Queue Table -->
+        <div class="mt-6">
+          <div class="overflow-x-auto custom-scrollbar">
+            <table class="w-full text-left text-xs">
+              <thead>
+                <tr class="border-b border-slate-800 text-slate-400 uppercase font-mono text-[10px]">
+                  <th class="py-2.5 px-3">Position</th>
+                  <th class="py-2.5 px-3">Request ID</th>
+                  <th class="py-2.5 px-3">Student Name (ID)</th>
+                  <th class="py-2.5 px-3">Desired Capacity</th>
+                  <th class="py-2.5 px-3">Duration</th>
+                  <th class="py-2.5 px-3">Timestamp</th>
+                  <th class="py-2.5 px-3">Notes</th>
+                  <th class="py-2.5 px-3 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody id="queueTableBody" class="divide-y divide-slate-800/60 text-slate-300">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: STUDENT DIRECTORY -->
+    <section id="tab-students" class="tab-content hidden space-y-4">
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-sm">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+          <div>
+            <h2 class="text-lg font-bold text-white flex items-center space-x-2">
+              <span>Registered Students Directory</span>
+              <span class="text-xs font-mono font-normal text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">HashMap&lt;ID, Student&gt; O(1)</span>
+            </h2>
+            <p class="text-xs text-slate-400 mt-0.5">Enforces borrowing quota constraints (default max 2 simultaneous devices per student).</p>
+          </div>
+
+          <button onclick="openAddStudentModal()" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold rounded-lg text-xs transition flex items-center space-x-1.5 shadow-md shadow-emerald-600/20">
+            <i class="fa-solid fa-user-plus"></i>
+            <span>Add Student</span>
+          </button>
+        </div>
+
+        <div class="mt-4">
+          <input type="text" id="studentSearch" placeholder="Search students by name, ID, department..." oninput="renderStudents()" class="w-full max-w-md px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition mb-4" />
+
+          <div class="overflow-x-auto custom-scrollbar">
+            <table class="w-full text-left text-xs">
+              <thead>
+                <tr class="border-b border-slate-800 text-slate-400 uppercase font-mono text-[10px]">
+                  <th class="py-2.5 px-3">Student ID</th>
+                  <th class="py-2.5 px-3">Full Name</th>
+                  <th class="py-2.5 px-3">Department</th>
+                  <th class="py-2.5 px-3">Email Address</th>
+                  <th class="py-2.5 px-3">Contact Phone</th>
+                  <th class="py-2.5 px-3">Borrow Status</th>
+                  <th class="py-2.5 px-3 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="studentTableBody" class="divide-y divide-slate-800/60 text-slate-300">
+                <!-- Dynamically populated -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 5: ALERT CENTER (PriorityQueue) -->
+    <section id="tab-alerts" class="tab-content hidden space-y-6">
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-sm">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+          <div>
+            <h2 class="text-lg font-bold text-white flex items-center space-x-2">
+              <span>PriorityQueue System Alert Center</span>
+              <span class="text-xs font-mono font-normal text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded border border-rose-500/20">PriorityQueue&lt;Alert&gt; (Min-Heap)</span>
+            </h2>
+            <p class="text-xs text-slate-400 mt-0.5">Critical Overdue loans and Battery &lt;10% alarms automatically bubble to top priority.</p>
+          </div>
+
+          <div class="flex items-center space-x-2">
+            <button onclick="pollHighestAlert()" class="px-3.5 py-2 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-lg text-xs transition flex items-center space-x-1.5 shadow-md shadow-rose-600/20">
+              <i class="fa-solid fa-bell-slash"></i>
+              <span>Poll Top Priority Alert</span>
+            </button>
+            <button onclick="resolveAllAlerts()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium border border-slate-700 transition">
+              <span>Resolve All</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Priority Queue Explanation Banner -->
+        <div class="mt-4 p-4 bg-slate-950/80 border border-slate-800 rounded-xl grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+          <div class="flex items-start space-x-2">
+            <span class="w-3 h-3 rounded-full bg-rose-500 mt-0.5 shrink-0"></span>
+            <div>
+              <span class="font-bold text-rose-400">Severity 1 (Critical):</span>
+              <p class="text-slate-400 text-[11px]">Overdue borrowings &amp; Critical battery levels (&lt;10%). Highest priority.</p>
+            </div>
+          </div>
+          <div class="flex items-start space-x-2">
+            <span class="w-3 h-3 rounded-full bg-amber-500 mt-0.5 shrink-0"></span>
+            <div>
+              <span class="font-bold text-amber-400">Severity 2 (Warning):</span>
+              <p class="text-slate-400 text-[11px]">Low battery powerbanks (10% - 19%). Minimum 20% required for checkout.</p>
+            </div>
+          </div>
+          <div class="flex items-start space-x-2">
+            <span class="w-3 h-3 rounded-full bg-blue-500 mt-0.5 shrink-0"></span>
+            <div>
+              <span class="font-bold text-blue-400">Heap Property:</span>
+              <p class="text-slate-400 text-[11px]">Peek() inspects root in O(1). Poll() extracts root in O(log N) time.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Active Alerts List -->
+        <div id="alertsContainer" class="space-y-3 mt-5">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 6: AUDIT LOG (LinkedList) -->
+    <section id="tab-history" class="tab-content hidden space-y-4">
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-sm">
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-slate-800">
+          <div>
+            <h2 class="text-lg font-bold text-white flex items-center space-x-2">
+              <span>Transaction History &amp; Audit Trail</span>
+              <span class="text-xs font-mono font-normal text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/20">LinkedList&lt;BorrowRecord&gt;</span>
+            </h2>
+            <p class="text-xs text-slate-400 mt-0.5">Chronological high-speed prepending (addFirst O(1)) of all checkout, return, and penalty transactions.</p>
+          </div>
+
+          <button onclick="exportHistoryCSV()" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold border border-slate-700 transition flex items-center space-x-1.5">
+            <i class="fa-solid fa-file-arrow-down text-emerald-400"></i>
+            <span>Export CSV Audit</span>
+          </button>
+        </div>
+
+        <div class="overflow-x-auto custom-scrollbar mt-4">
+          <table class="w-full text-left text-xs">
+            <thead>
+              <tr class="border-b border-slate-800 text-slate-400 uppercase font-mono text-[10px]">
+                <th class="py-2.5 px-3">Record ID</th>
+                <th class="py-2.5 px-3">Student Name (ID)</th>
+                <th class="py-2.5 px-3">PowerBank</th>
+                <th class="py-2.5 px-3">Borrowed At</th>
+                <th class="py-2.5 px-3">Due Date</th>
+                <th class="py-2.5 px-3">Returned At</th>
+                <th class="py-2.5 px-3">Start &rarr; End Battery</th>
+                <th class="py-2.5 px-3">Status</th>
+                <th class="py-2.5 px-3">Fine Paid</th>
+              </tr>
+            </thead>
+            <tbody id="historyTableBody" class="divide-y divide-slate-800/60 text-slate-300">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 7: DATA STRUCTURES VISUAL INSPECTOR -->
+    <section id="tab-dsa" class="tab-content hidden space-y-6">
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-sm">
+        <div class="pb-4 border-b border-slate-800">
+          <h2 class="text-lg font-bold text-white flex items-center space-x-2">
+            <span>Computer Science Data Structures Architecture</span>
+            <span class="text-xs font-mono font-normal text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded border border-purple-500/20">Under The Hood</span>
+          </h2>
+          <p class="text-xs text-slate-400 mt-0.5">How this production suite leverages 5 core CS data structures for O(1) and O(log N) operations without external database dependencies.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-5">
+
+          <!-- DS 1: ArrayList -->
+          <div class="bg-slate-950 border border-slate-800 rounded-xl p-4">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-bold text-emerald-400 font-mono">1. ArrayList&lt;PowerBank&gt;</span>
+              <span class="text-[10px] font-mono bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded border border-emerald-500/30">O(1) Access</span>
+            </div>
+            <h4 class="text-xs font-bold text-slate-200">Dynamic Fleet Inventory &amp; Filtering</h4>
+            <p class="text-[11px] text-slate-400 mt-1">Maintains the continuous fleet list. Provides indexed iteration for grid view rendering, multi-criteria filtering, and battery capacity statistics.</p>
+            <div class="mt-3 p-2 bg-slate-900 rounded border border-slate-800 font-mono text-[10px] text-slate-400">
+              Active Elements: <span id="dsaArrayListCount" class="text-emerald-400 font-bold">0</span> items
+            </div>
+          </div>
+
+          <!-- DS 2: HashMap -->
+          <div class="bg-slate-950 border border-slate-800 rounded-xl p-4">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-bold text-cyan-400 font-mono">2. HashMap&lt;String, T&gt;</span>
+              <span class="text-[10px] font-mono bg-cyan-500/10 text-cyan-400 px-2 py-0.5 rounded border border-cyan-500/30">O(1) Lookup</span>
+            </div>
+            <h4 class="text-xs font-bold text-slate-200">Instant Student &amp; Device Hash Lookups</h4>
+            <p class="text-[11px] text-slate-400 mt-1">Hash-indexed key lookups prevent duplicate powerbank registration, enforce student loan quotas, and validate checkouts instantly without scanning.</p>
+            <div class="mt-3 p-2 bg-slate-900 rounded border border-slate-800 font-mono text-[10px] text-slate-400">
+              Key Indices: <span id="dsaHashMapCount" class="text-cyan-400 font-bold">0</span> entries
+            </div>
+          </div>
+
+          <!-- DS 3: Queue FIFO -->
+          <div class="bg-slate-950 border border-slate-800 rounded-xl p-4">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-bold text-amber-400 font-mono">3. Queue&lt;BorrowRequest&gt;</span>
+              <span class="text-[10px] font-mono bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded border border-amber-500/30">FIFO Strict</span>
+            </div>
+            <h4 class="text-xs font-bold text-slate-200">Fair Student Waitlist Dispatcher</h4>
+            <p class="text-[11px] text-slate-400 mt-1">When zero powerbanks are available, borrow requests enter a First-In First-Out pipeline. Fulfill operations dequeue the longest-waiting student.</p>
+            <div class="mt-3 p-2 bg-slate-900 rounded border border-slate-800 font-mono text-[10px] text-slate-400">
+              Queue Depth: <span id="dsaQueueCount" class="text-amber-400 font-bold">0</span> waiting
+            </div>
+          </div>
+
+          <!-- DS 4: LinkedList -->
+          <div class="bg-slate-950 border border-slate-800 rounded-xl p-4">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-bold text-blue-400 font-mono">4. LinkedList&lt;BorrowRecord&gt;</span>
+              <span class="text-[10px] font-mono bg-blue-500/10 text-blue-400 px-2 py-0.5 rounded border border-blue-500/30">O(1) Prepend</span>
+            </div>
+            <h4 class="text-xs font-bold text-slate-200">Chronological Audit Transaction Trail</h4>
+            <p class="text-[11px] text-slate-400 mt-1">Doubly-linked nodes allow instantaneous prepending (`addFirst`) for each return, fine payment, or loan checkout without array resizing.</p>
+            <div class="mt-3 p-2 bg-slate-900 rounded border border-slate-800 font-mono text-[10px] text-slate-400">
+              Chained Records: <span id="dsaLinkedListCount" class="text-blue-400 font-bold">0</span> transactions
+            </div>
+          </div>
+
+          <!-- DS 5: PriorityQueue Min-Heap -->
+          <div class="bg-slate-950 border border-slate-800 rounded-xl p-4">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-bold text-rose-400 font-mono">5. PriorityQueue&lt;Alert&gt;</span>
+              <span class="text-[10px] font-mono bg-rose-500/10 text-rose-400 px-2 py-0.5 rounded border border-rose-500/30">O(log N) Heap</span>
+            </div>
+            <h4 class="text-xs font-bold text-slate-200">Critical Fault Triage Min-Heap</h4>
+            <p class="text-[11px] text-slate-400 mt-1">Self-balancing binary heap sorts alerts by urgency. Critical battery &lt;10% and overdue breaches always surface at the root before warnings.</p>
+            <div class="mt-3 p-2 bg-slate-900 rounded border border-slate-800 font-mono text-[10px] text-slate-400">
+              Heap Nodes: <span id="dsaHeapCount" class="text-rose-400 font-bold">0</span> active alerts
+            </div>
+          </div>
+
+          <!-- Java Desktop Architecture & Swing -->
+          <div class="bg-slate-950 border border-slate-800 rounded-xl p-4">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-bold text-purple-400 font-mono">Desktop &amp; Cloud Suite</span>
+              <span class="text-[10px] font-mono bg-purple-500/10 text-purple-400 px-2 py-0.5 rounded border border-purple-500/30">Dual Runtime</span>
+            </div>
+            <h4 class="text-xs font-bold text-slate-200">Java Swing + Web Vercel Cloud</h4>
+            <p class="text-[11px] text-slate-400 mt-1">Identical model contracts between the Java Desktop Suite (`SmartPowerbankSystem.jar`) and this live cloud edition.</p>
+            <div class="mt-3 p-2 bg-slate-900 rounded border border-slate-800 font-mono text-[10px] text-slate-400">
+              Java Sources: <span class="text-purple-400 font-bold">15 source files compiled</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Modals -->
+
+  <!-- Modal: Register PowerBank -->
+  <div id="modalAddPowerBank" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl">
+      <div class="flex items-center justify-between pb-4 border-b border-slate-800">
+        <h3 class="text-base font-bold text-white">Register New PowerBank</h3>
+        <button onclick="closeModal('modalAddPowerBank')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <form onsubmit="handleAddPowerBankSubmit(event)" class="space-y-4 mt-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">PowerBank ID (Unique)</label>
+          <input type="text" id="addPbId" placeholder="e.g. PB-115" required class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-emerald-500 font-mono" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Model Name</label>
+          <input type="text" id="addPbModel" placeholder="e.g. Anker 737 GaNPrime 24K" required class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-emerald-500" />
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Capacity (mAh)</label>
+            <input type="number" id="addPbCapacity" value="20000" min="1000" step="1000" required class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-emerald-500 font-mono" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Battery Level (%)</label>
+            <input type="number" id="addPbBattery" value="100" min="0" max="100" required class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-emerald-500 font-mono" />
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Dock Slot</label>
+            <input type="text" id="addPbSlot" placeholder="DOCK-C02" required class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-emerald-500 font-mono" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Initial Status</label>
+            <select id="addPbStatus" class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-emerald-500">
+              <option value="AVAILABLE">AVAILABLE</option>
+              <option value="CHARGING">CHARGING</option>
+              <option value="MAINTENANCE">MAINTENANCE</option>
+            </select>
+          </div>
+        </div>
+        <div class="pt-2 flex justify-end space-x-2">
+          <button type="button" onclick="closeModal('modalAddPowerBank')" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-lg text-xs">Cancel</button>
+          <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold rounded-lg text-xs">Add PowerBank</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Enqueue Student -->
+  <div id="modalEnqueue" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl">
+      <div class="flex items-center justify-between pb-4 border-b border-slate-800">
+        <h3 class="text-base font-bold text-white">Enqueue Student to Waitlist</h3>
+        <button onclick="closeModal('modalEnqueue')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <form onsubmit="handleEnqueueSubmit(event)" class="space-y-4 mt-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Select Student</label>
+          <select id="enqueueStudentSelect" required class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-cyan-500">
+            <!-- Dynamically populated -->
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Preferred Capacity</label>
+            <select id="enqueueCapacity" class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-cyan-500">
+              <option value="10000">10,000 mAh</option>
+              <option value="20000" selected>20,000 mAh</option>
+              <option value="25000">25,000 mAh</option>
+              <option value="30000">30,000 mAh</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Estimated Hours</label>
+            <input type="number" id="enqueueHours" value="3" min="1" max="12" class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-cyan-500 font-mono" />
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Purpose / Notes</label>
+          <input type="text" id="enqueueNotes" placeholder="e.g. Lab project charging" class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-cyan-500" />
+        </div>
+        <div class="pt-2 flex justify-end space-x-2">
+          <button type="button" onclick="closeModal('modalEnqueue')" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-lg text-xs">Cancel</button>
+          <button type="submit" class="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-bold rounded-lg text-xs">Enqueue</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Add Student -->
+  <div id="modalAddStudent" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl">
+      <div class="flex items-center justify-between pb-4 border-b border-slate-800">
+        <h3 class="text-base font-bold text-white">Register New Student</h3>
+        <button onclick="closeModal('modalAddStudent')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <form onsubmit="handleAddStudentSubmit(event)" class="space-y-4 mt-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Student ID</label>
+          <input type="text" id="addStuId" placeholder="e.g. STU-1009" required class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-emerald-500 font-mono" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Full Name</label>
+          <input type="text" id="addStuName" placeholder="e.g. Priya Sundar" required class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-emerald-500" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Department</label>
+          <input type="text" id="addStuDept" placeholder="e.g. Computer Science" required class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-emerald-500" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Email Address</label>
+          <input type="email" id="addStuEmail" placeholder="student@univ.edu" required class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-emerald-500" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Contact Phone</label>
+          <input type="text" id="addStuPhone" placeholder="+91 98765 43218" required class="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-xs text-slate-200 focus:outline-none focus:border-emerald-500" />
+        </div>
+        <div class="pt-2 flex justify-end space-x-2">
+          <button type="button" onclick="closeModal('modalAddStudent')" class="px-4 py-2 bg-slate-800 text-slate-300 rounded-lg text-xs">Cancel</button>
+          <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold rounded-lg text-xs">Register</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Test Verification Results -->
+  <div id="modalTestResults" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-2xl w-full p-6 shadow-2xl max-h-[85vh] flex flex-col">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-800">
+        <div class="flex items-center space-x-2">
+          <i class="fa-solid fa-circle-check text-emerald-400 text-lg"></i>
+          <h3 class="text-base font-bold text-white">System Verification Test Suite</h3>
+        </div>
+        <button onclick="closeModal('modalTestResults')" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+      <div id="testOutputLog" class="flex-1 overflow-y-auto custom-scrollbar p-3 bg-slate-950 rounded-lg font-mono text-[11px] text-slate-300 space-y-1 my-4 border border-slate-800">
+        <!-- Test output streamed here -->
+      </div>
+      <div class="flex justify-end pt-2">
+        <button onclick="closeModal('modalTestResults')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-xs font-semibold">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toastContainer" class="fixed bottom-4 right-4 z-50 space-y-2 max-w-sm pointer-events-none"></div>
+
+  <!-- Footer -->
+  <footer class="border-t border-slate-800/80 bg-slate-950 py-4 text-center text-xs text-slate-500">
+    <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+      <div class="flex items-center space-x-2">
+        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+        <span>Smart Powerbank Lending System &bull; Java Swing Desktop Suite &amp; Web Edition</span>
+      </div>
+      <div class="flex items-center space-x-4">
+        <span>Designed &amp; Developed by <strong class="text-slate-300">BalajiDCodes</strong></span>
+        <a href="https://github.com/BalajiDCodes/Smart-Powerbank-Lending-System" target="_blank" class="text-emerald-400 hover:underline">GitHub Repository</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
