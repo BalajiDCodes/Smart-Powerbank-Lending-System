@@ -98,6 +98,21 @@ Every data structure performs a critical and meaningful algorithmic role in the 
 
 ---
 
+## ⚡ Algorithms in Data Structures Implementation
+
+In addition to core data structure storage, the system implements two fundamental algorithms:
+
+| Algorithm | Implementation File | Time Complexity | Space Complexity | Practical Role in System |
+|---|---|---|---|---|
+| **Binary Search** | `FleetSearchAlgorithm.java` & `app.js` | $O(\log N)$ | $O(1)$ | Logarithmically searches the fleet array to locate an exact or optimal powerbank matching a requested target battery percentage (or capacity) in $\lceil \log_2(N) \rceil$ comparisons instead of linear $O(N)$ scan. |
+| **MergeSort** | `FleetSearchAlgorithm.java` & `app.js` | $O(N \log N)$ | $O(N)$ | Custom Divide-and-Conquer sorting algorithm that recursively partitions the powerbank fleet and merges them into strict ascending order by battery level or capacity. Pre-requisite for logarithmic binary search. |
+
+### How It Works:
+1. **Desktop Suite (`Dashboard.java`)**: Click **"🔍 Binary Search O(log N)"** in the Inventory view. Enter a target battery percentage (e.g. `75%`), and the system runs the algorithm, displaying the complete step-by-step diagnostic trace ($[low .. high]$ range, $mid$ index, eliminated half, and total comparisons).
+2. **Vercel Cloud Edition (`index.html` & `app.js`)**: Open the **"Algorithms (Binary Search & MergeSort)"** tab to interactively visualize pointer movements (`LOW`, `MID`, `HIGH`, `MATCH`) and view live divide-and-conquer trace logs.
+
+---
+
 ## 📦 Application Modules Walkthrough
 
 The suite comprises all 12 requested modules accessible through the modern Navy-Teal sidebar:

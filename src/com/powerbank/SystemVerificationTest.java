@@ -1,5 +1,6 @@
 package com.powerbank;
 
+import com.powerbank.algorithm.FleetSearchAlgorithm;
 import com.powerbank.data.FileStorage;
 import com.powerbank.model.Alert;
 import com.powerbank.model.BorrowRecord;
@@ -39,6 +40,7 @@ public class SystemVerificationTest {
         testDataStructure3_FIFOQueue(borrowingManager);
         testDataStructure4_LinkedList(borrowingManager);
         testDataStructure5_PriorityQueue(alertManager);
+        testAlgorithm_BinarySearchAndMergeSort(inventoryManager);
         testBusinessRules_BorrowingValidations(inventoryManager, borrowingManager);
         testBusinessRules_ReturnAndOverdueCalculation(inventoryManager, borrowingManager);
         testPersistence_FileStorage(inventoryManager, borrowingManager, alertManager, fileStorage);
@@ -206,7 +208,32 @@ public class SystemVerificationTest {
     }
 
     // ==========================================
-    // 6. BUSINESS RULES: BORROWING VALIDATIONS
+    // 6. ALGORITHM: MERGESORT & BINARY SEARCH
+    // ==========================================
+    private static void testAlgorithm_BinarySearchAndMergeSort(InventoryManager inv) {
+        System.out.println("--> Testing [Algorithm] MergeSort O(N log N) & Binary Search O(log N)...");
+        List<PowerBank> sorted = inv.getPowerBanksSortedByBattery();
+        assertTrue("MergeSort produces sorted battery list", sorted != null && !sorted.isEmpty());
+
+        boolean isAscending = true;
+        for (int i = 0; i < sorted.size() - 1; i++) {
+            if (sorted.get(i).getBatteryLevel() > sorted.get(i + 1).getBatteryLevel()) {
+                isAscending = false;
+                break;
+            }
+        }
+        assertTrue("MergeSort satisfies ascending battery level invariant", isAscending);
+
+        // Binary Search exact match
+        int target = sorted.get(sorted.size() / 2).getBatteryLevel();
+        FleetSearchAlgorithm.SearchResult resExact = inv.binarySearchByBattery(target);
+        assertTrue("Binary Search finds target battery level", resExact != null && resExact.isFound());
+        assertTrue("Binary Search takes logarithmic steps (comparisons <= log2(N) + 2)",
+                resExact.getComparisons() <= (Math.ceil(Math.log(sorted.size()) / Math.log(2)) + 2));
+    }
+
+    // ==========================================
+    // 7. BUSINESS RULES: BORROWING VALIDATIONS
     // ==========================================
     private static void testBusinessRules_BorrowingValidations(InventoryManager inv, BorrowingManager bm) {
         System.out.println("--> Testing Business Rules & Borrowing Validations...");
@@ -222,18 +249,38 @@ public class SystemVerificationTest {
         assertTrue("System strictly prevents borrowing powerbanks with battery < 20%", lowBattRejected);
 
         // 2. Cannot borrow already borrowed unit
-        PowerBank borrowedUnit = inv.getPowerBank("PB-106"); // Status BORROWED
+        PowerBank borrowedUnit = null;
+        for (PowerBank pb : inv.getAllPowerBanks()) {
+            if (PowerBank.STATUS_BORROWED.equalsIgnoreCase(pb.getStatus())) {
+                borrowedUnit = pb;
+                break;
+            }
+        }
+        if (borrowedUnit == null) {
+            PowerBank avail = inv.getAvailablePowerBanks().get(0);
+            try {
+                bm.borrowPowerBank("STU-1004", avail.getId(), 2);
+                borrowedUnit = avail;
+            } catch (Exception ignored) {}
+        }
+
         boolean alreadyBorrowedRejected = false;
-        try {
-            bm.borrowPowerBank("STU-1003", borrowedUnit.getId(), 4);
-        } catch (Exception e) {
-            alreadyBorrowedRejected = true;
+        if (borrowedUnit != null) {
+            try {
+                bm.borrowPowerBank("STU-1003", borrowedUnit.getId(), 4);
+            } catch (Exception e) {
+                alreadyBorrowedRejected = true;
+            }
         }
         assertTrue("System strictly prevents borrowing already borrowed powerbanks", alreadyBorrowedRejected);
 
         // 3. Successful borrow test
-        PowerBank availableUnit = inv.getPowerBank("PB-101");
-        int initialBorrows = availableUnit.getTotalBorrowCount();
+        PowerBank availableUnit = null;
+        for (PowerBank pb : inv.getAvailablePowerBanks()) {
+            availableUnit = pb;
+            break;
+        }
+        int initialBorrows = availableUnit != null ? availableUnit.getTotalBorrowCount() : 0;
         try {
             BorrowRecord rec = bm.borrowPowerBank("STU-1003", availableUnit.getId(), 2);
             assertTrue("Borrow successful for available unit", rec != null);

@@ -1,5 +1,6 @@
 package com.powerbank.ui;
 
+import com.powerbank.algorithm.FleetSearchAlgorithm;
 import com.powerbank.data.FileStorage;
 import com.powerbank.model.Alert;
 import com.powerbank.model.BorrowRecord;
@@ -518,6 +519,9 @@ public class Dashboard extends JFrame {
         JPanel rightActions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         rightActions.setOpaque(false);
 
+        JButton btnBinarySearch = UITheme.createSecondaryButton("🔍 Binary Search O(log N)");
+        btnBinarySearch.addActionListener(e -> showBinarySearchDialog());
+
         JButton btnAdd = UITheme.createPrimaryButton("+ Add PowerBank");
         btnAdd.addActionListener(e -> showAddPowerBankDialog());
 
@@ -527,6 +531,7 @@ public class Dashboard extends JFrame {
         JButton btnDelete = UITheme.createDangerButton("🗑️ Delete Selected");
         btnDelete.addActionListener(e -> deleteSelectedPowerBank());
 
+        rightActions.add(btnBinarySearch);
         rightActions.add(btnAdd);
         rightActions.add(btnEdit);
         rightActions.add(btnDelete);
@@ -1716,6 +1721,41 @@ public class Dashboard extends JFrame {
                 String.format("Processed highest priority alert:\n\nID: %s\nSeverity: %d (%s)\nTitle: %s\nTarget: %s",
                         top.getAlertId(), top.getSeverity(), top.getSeverityName(), top.getTitle(), top.getTargetId()),
                 "Alert Resolved", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private void showBinarySearchDialog() {
+        String input = JOptionPane.showInputDialog(this,
+                "Enter Target Battery Percentage to Search (0 - 100):\n(Demonstrates MergeSort O(N log N) + Binary Search O(log N))",
+                "75");
+        if (input != null && !input.trim().isEmpty()) {
+            try {
+                int targetBattery = Integer.parseInt(input.trim());
+                if (targetBattery < 0 || targetBattery > 100) {
+                    JOptionPane.showMessageDialog(this, "Please enter a valid battery level between 0 and 100.", "Invalid Input", JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+
+                FleetSearchAlgorithm.SearchResult result = inventoryManager.binarySearchByBattery(targetBattery);
+                StringBuilder sb = new StringBuilder();
+                sb.append("=== BINARY SEARCH ALGORITHM EXECUTION TRACE ===\n\n");
+                for (String line : result.getExecutionTrace()) {
+                    sb.append("• ").append(line).append("\n");
+                }
+                sb.append("\n================================================\n");
+                sb.append(String.format("Time Complexity: O(log N)\nTotal Comparisons: %d\nMatched PowerBank: %s",
+                        result.getComparisons(),
+                        result.getMatchedUnit() != null ? result.getMatchedUnit().toString() : "None"));
+
+                JTextArea textArea = new JTextArea(sb.toString(), 16, 45);
+                textArea.setEditable(false);
+                textArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
+                JScrollPane scrollPane = new JScrollPane(textArea);
+
+                JOptionPane.showMessageDialog(this, scrollPane, "Binary Search Algorithm Result - O(log N)", JOptionPane.INFORMATION_MESSAGE);
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(this, "Please enter a valid integer.", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        }
     }
 
     private void showAddPowerBankDialog() {

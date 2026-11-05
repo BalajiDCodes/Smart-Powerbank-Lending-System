@@ -221,6 +221,7 @@ function renderAll() {
   renderAlerts();
   renderHistory();
   renderDsaInspector();
+  renderAlgorithmsView();
   saveState();
 }
 
@@ -1048,14 +1049,15 @@ function runVerificationTest() {
   openModal("modalTestResults");
 
   const steps = [
-    "[1/8] Verifying ArrayList<PowerBank> dynamic allocation...",
-    `[2/8] Testing HashMap<String, PowerBank> O(1) hash indexing on ${state.powerbanks.length} fleet keys...`,
-    `[3/8] Testing HashMap<String, Student> unique constraint on ${state.students.length} student entries...`,
-    "[4/8] Testing FIFO Queue<BorrowRequest> order sequence and dequeue...",
-    "[5/8] Testing LinkedList<BorrowRecord> transaction prepending (addFirst)...",
-    "[6/8] Testing PriorityQueue<Alert> min-heap invariant (Critical ahead of Warning)...",
-    "[7/8] Testing Overdue fine calculation engine ($2.00/hr)...",
-    "[8/8] Testing data persistence integrity and serialization..."
+    "[1/9] Verifying ArrayList<PowerBank> dynamic allocation...",
+    `[2/9] Testing HashMap<String, PowerBank> O(1) hash indexing on ${state.powerbanks.length} fleet keys...`,
+    `[3/9] Testing HashMap<String, Student> unique constraint on ${state.students.length} student entries...`,
+    "[4/9] Testing FIFO Queue<BorrowRequest> order sequence and dequeue...",
+    "[5/9] Testing LinkedList<BorrowRecord> transaction prepending (addFirst)...",
+    "[6/9] Testing PriorityQueue<Alert> min-heap invariant (Critical ahead of Warning)...",
+    "[7/9] Testing [Algorithm] MergeSort O(N log N) & Binary Search O(log N)...",
+    "[8/9] Testing Overdue fine calculation engine ($2.00/hr)...",
+    "[9/9] Testing data persistence integrity and serialization..."
   ];
 
   let current = 0;
@@ -1143,6 +1145,153 @@ function updateLiveClock() {
     const now = new Date();
     el.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   }
+}
+
+// ==========================================
+// 7. ALGORITHMS IN DATA STRUCTURES
+// ==========================================
+
+// MergeSort Implementation - O(N log N)
+function mergeSortPowerBanks(list) {
+  if (!list || list.length <= 1) return list ? [...list] : [];
+  const mid = Math.floor(list.length / 2);
+  const left = mergeSortPowerBanks(list.slice(0, mid));
+  const right = mergeSortPowerBanks(list.slice(mid));
+  return mergeArrays(left, right);
+}
+
+function mergeArrays(left, right) {
+  const result = [];
+  let i = 0, j = 0;
+  while (i < left.length && j < right.length) {
+    if (left[i].batteryLevel <= right[j].batteryLevel) {
+      result.push(left[i]);
+      i++;
+    } else {
+      result.push(right[j]);
+      j++;
+    }
+  }
+  return result.concat(left.slice(i)).concat(right.slice(j));
+}
+
+// Binary Search Implementation - O(log N)
+function binarySearchFleet(sortedList, targetBattery) {
+  const trace = [];
+  let low = 0;
+  let high = sortedList.length - 1;
+  let step = 0;
+  let matchedIndex = -1;
+
+  trace.push(`• Starting Binary Search for Target Battery = ${targetBattery}%`);
+  trace.push(`• Search space size N = ${sortedList.length}. Max logarithmic comparisons = ⌈log2(${sortedList.length})⌉ = ${Math.ceil(Math.log2(sortedList.length))}`);
+
+  while (low <= high) {
+    step++;
+    const mid = Math.floor((low + high) / 2);
+    const midPb = sortedList[mid];
+    const midBatt = midPb.batteryLevel;
+
+    trace.push(`Step ${step}: Range [${low} .. ${high}], Mid index ${mid} -> ${midPb.id} (${midBatt}%)`);
+
+    if (midBatt === targetBattery) {
+      matchedIndex = mid;
+      trace.push(`SUCCESS: Exact match found at index ${mid} for ${midPb.id} (${midBatt}%) in ${step} comparisons!`);
+      break;
+    } else if (midBatt < targetBattery) {
+      trace.push(`Target ${targetBattery}% > Mid ${midBatt}% -> Eliminate left half. Search right [${mid + 1} .. ${high}]`);
+      low = mid + 1;
+    } else {
+      trace.push(`Target ${targetBattery}% < Mid ${midBatt}% -> Eliminate right half. Search left [${low} .. ${mid - 1}]`);
+      high = mid - 1;
+    }
+  }
+
+  if (matchedIndex === -1) {
+    matchedIndex = low < sortedList.length ? low : sortedList.length - 1;
+    trace.push(`Exact ${targetBattery}% not found. Closest optimal unit at index ${matchedIndex}: ${sortedList[matchedIndex].id} (${sortedList[matchedIndex].batteryLevel}%)`);
+  }
+
+  return { matchedIndex, comparisons: step, trace };
+}
+
+function renderAlgorithmsView(highlights = {}) {
+  const container = document.getElementById("algoArrayContainer");
+  const linearMax = document.getElementById("algoLinearMax");
+  const binaryMax = document.getElementById("algoBinaryMax");
+  if (!container) return;
+
+  const sorted = mergeSortPowerBanks(state.powerbanks);
+  if (linearMax) linearMax.textContent = sorted.length;
+  if (binaryMax) binaryMax.textContent = Math.ceil(Math.log2(sorted.length || 1));
+
+  container.innerHTML = sorted.map((pb, idx) => {
+    let border = "border-slate-800 bg-slate-900/60";
+    let badge = "";
+
+    if (highlights.match === idx) {
+      border = "border-amber-400 bg-amber-500/20 ring-2 ring-amber-400";
+      badge = '<span class="px-1.5 py-0.2 rounded bg-amber-400 text-slate-950 font-bold text-[9px]">MATCH</span>';
+    } else if (highlights.mid === idx) {
+      border = "border-cyan-400 bg-cyan-500/20";
+      badge = '<span class="px-1.5 py-0.2 rounded bg-cyan-400 text-slate-950 font-bold text-[9px]">MID</span>';
+    } else if (idx >= highlights.low && idx <= highlights.high) {
+      border = "border-slate-600 bg-slate-800/80";
+    }
+
+    return `
+      <div class="p-2.5 rounded-lg border ${border} transition flex flex-col justify-between text-xs">
+        <div class="flex items-center justify-between font-mono text-[10px] text-slate-400">
+          <span>idx: ${idx}</span>
+          ${badge}
+        </div>
+        <div class="font-bold text-white mt-1">${pb.id}</div>
+        <div class="text-[11px] text-slate-400 line-clamp-1">${pb.modelName}</div>
+        <div class="mt-2 flex items-center justify-between text-[11px]">
+          <span class="text-slate-400">Battery:</span>
+          <span class="font-mono font-bold text-emerald-400">${pb.batteryLevel}%</span>
+        </div>
+      </div>
+    `;
+  }).join("");
+}
+
+function runWebMergeSort() {
+  state.powerbanks = mergeSortPowerBanks(state.powerbanks);
+  renderAll();
+  const logDiv = document.getElementById("algoTraceLog");
+  if (logDiv) {
+    logDiv.innerHTML = `
+      <div class="text-purple-400 font-bold">MergeSort O(N log N) Completed:</div>
+      <div class="text-slate-300">Divide-and-Conquer recursively split fleet array of ${state.powerbanks.length} elements and merged in O(N log N) time.</div>
+      <div class="text-slate-400 mt-1">Fleet array is now sorted strictly in ascending order by battery percentage.</div>
+    `;
+  }
+  showToast("Fleet sorted via MergeSort O(N log N)", "success");
+}
+
+function runWebBinarySearch() {
+  const target = parseInt(document.getElementById("algoTargetBattery").value, 10);
+  if (isNaN(target) || target < 0 || target > 100) {
+    showToast("Please enter a target battery percentage between 0 and 100.", "error");
+    return;
+  }
+
+  const sorted = mergeSortPowerBanks(state.powerbanks);
+  const result = binarySearchFleet(sorted, target);
+
+  renderAlgorithmsView({ match: result.matchedIndex });
+
+  const logDiv = document.getElementById("algoTraceLog");
+  const msgEl = document.getElementById("algoStatusMessage");
+
+  if (logDiv) {
+    logDiv.innerHTML = result.trace.map(t => `<div>${t}</div>`).join("");
+  }
+  if (msgEl) {
+    msgEl.textContent = `Found in ${result.comparisons} comparisons (O(log N))`;
+  }
+  showToast(`Binary Search finished in ${result.comparisons} comparisons!`, "success");
 }
 
 // Initialize on page load

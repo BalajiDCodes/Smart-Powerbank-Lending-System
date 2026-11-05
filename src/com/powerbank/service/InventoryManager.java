@@ -1,5 +1,6 @@
 package com.powerbank.service;
 
+import com.powerbank.algorithm.FleetSearchAlgorithm;
 import com.powerbank.data.FileStorage;
 import com.powerbank.model.PowerBank;
 
@@ -253,5 +254,22 @@ public class InventoryManager {
             }
         }
         return count;
+    }
+
+    /**
+     * Algorithm: Custom MergeSort O(N log N)
+     * Returns a copy of the fleet sorted ascending by battery percentage.
+     */
+    public List<PowerBank> getPowerBanksSortedByBattery() {
+        return FleetSearchAlgorithm.mergeSortByBattery(powerBankList);
+    }
+
+    /**
+     * Algorithm: Binary Search O(log N)
+     * Performs logarithmic search to find an exact or closest matching powerbank by battery level.
+     */
+    public FleetSearchAlgorithm.SearchResult binarySearchByBattery(int targetBattery) {
+        List<PowerBank> sorted = getPowerBanksSortedByBattery();
+        return FleetSearchAlgorithm.binarySearchByBattery(sorted, targetBattery);
     }
 }
